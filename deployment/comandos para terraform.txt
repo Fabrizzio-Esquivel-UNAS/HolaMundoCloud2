@@ -1,0 +1,8 @@
+ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com"
+
+aws sts get-caller-identity --profile default --region us-east-2
+
+docker tag 0c347511e8d02b253d9445f0378212bec0e488bd9997895a53a45fd57a49377f 676206932076.dkr.ecr.us-east-2.amazonaws.com/ecr_example_repo:latest
+
+docker push 676206932076.dkr.ecr.us-east-2.amazonaws.com/ecr_example_repo:latest
