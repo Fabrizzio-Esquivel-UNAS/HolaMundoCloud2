@@ -1,3 +1,4 @@
 node_modules/
 deployment/.terraform/
+deployment/terraform.tfvars
 HolaMundoCloudKey.pem

@@ -26,22 +26,22 @@ resource "aws_route" "internet_access" {
     gateway_id = "${aws_internet_gateway.internet_gateway.id}"
 }
 
-resource "aws_security_group" "security_group_example_app" {
-    name = "security_group_example_app"
-    description = "Allow TLS inbound traffic on port 80 (http)"
-    vpc_id = "${aws_vpc.vpc_example_app.id}"
+# Create a security group to allow HTTP traffic to the ECS instances
+resource "aws_security_group" "ecs_sg" {
+  name = "ecs_sg_HolaMundoCloud"
+  vpc_id = "${aws_vpc.vpc_example_app.id}"
 
-    ingress {
-        from_port = 80
-        to_port = 3000
-        protocol = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-    egress {
-        from_port = 0
-        to_port = 0
-        protocol = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
