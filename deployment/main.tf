@@ -4,9 +4,9 @@ provider "aws" {
 }
 
 # Create an ECR repository for the Docker image (if not created earlier)
-resource "aws_ecr_repository" "node_app" {
-  name = "hola_mundo_cloud-repo"
-}
+# resource "aws_ecr_repository" "node_app" {
+#   name = "hola_mundo_cloud-repo"
+# }
 
 # Create an ECS cluster using EC2
 resource "aws_ecs_cluster" "node_app_cluster" {
@@ -58,9 +58,30 @@ resource "aws_launch_template" "ecs_launch_template" {
     security_groups             = [aws_security_group.ecs_sg.id]
   }
 
+  # Script to configure the instance, install Docker, and run the Node.js app as a Docker container
   user_data = base64encode(<<-EOF
               #!/bin/bash
-              echo ECS_CLUSTER=${aws_ecs_cluster.node_app_cluster.name} >> /etc/ecs/ecs.config
+              # Update the instance
+              sudo yum update -y
+
+              # Install Docker
+              sudo amazon-linux-extras install docker -y
+              sudo service docker start
+              sudo usermod -a -G docker ec2-user
+
+              # Install Git
+              sudo yum install -y git
+
+              # Clone your Node.js app from the Git repository (replace with your repo)
+              cd /home/ec2-user
+              git clone https://github.com/Fabrizzio-Esquivel-UNAS/HolaMundoCloud2.git nodeapp
+              cd nodeapp
+
+              # Build the Docker image
+              sudo docker build -t nodeapp .
+
+              # Run the Docker container
+              sudo docker run -d -p 80:3000 nodeapp
               EOF
   )
 }
