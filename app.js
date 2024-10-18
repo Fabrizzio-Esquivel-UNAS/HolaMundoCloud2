@@ -87,6 +87,22 @@ app.delete('/todos/:id', async (req, res) => {
   }
 });
 
+// Fibonacci Function
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// New Fibonacci endpoint
+app.get('/fibonacci/:num', (req, res) => {
+  const num = parseInt(req.params.num);
+  if (isNaN(num) || num < 0) {
+    return res.status(400).json({ error: 'Invalid number' });
+  }
+  const result = fibonacci(num);
+  res.json({ result });
+});
+
 // Serve index.html for any unknown routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

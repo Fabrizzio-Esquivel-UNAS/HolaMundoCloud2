@@ -8,6 +8,20 @@
 </head>
 <body>
   <div class="container">
+    <h2>Fibonacci Load Test</h2>
+    <form id="fibonacci-form">
+      <label for="fibonacci-count">Fibonacci Number (n):</label>
+      <input type="number" id="fibonacci-count" value="35" required>
+      
+      <label for="fibonacci-times">Number of Calls:</label>
+      <input type="number" id="fibonacci-times" value="5" required>
+      
+      <button type="submit">Start</button>
+    </form>
+    
+    <div id="fibonacci-results"></div>  
+  </div>
+  <div class="container">
     <h1>To-Do List</h1>
     <form id="todo-form">
       <input type="text" id="task" placeholder="Add a new task" required>

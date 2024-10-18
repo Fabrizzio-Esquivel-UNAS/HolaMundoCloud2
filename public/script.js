@@ -62,3 +62,37 @@ async function deleteTask(id) {
   const taskItem = document.querySelector(`li[data-id='${id}']`);
   taskItem.remove();
 }
+
+// Fibonacci API interaction
+const fibonacciForm = document.getElementById('fibonacci-form');
+const fibResultDiv = document.getElementById('fibonacci-results');
+
+// Listen to Fibonacci form submit
+fibonacciForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const count = document.getElementById('fibonacci-count').value;
+  const times = document.getElementById('fibonacci-times').value;
+
+  if (count && times) {
+    fibResultDiv.innerHTML = 'Calculating...';
+    const results = await makeFibonacciCalls(count, times);
+    fibResultDiv.innerHTML = '';
+    results.forEach((result, index) => {
+      const p = document.createElement('p');
+      p.textContent = `Call ${index + 1}: Fibonacci(${count}) = ${result}`;
+      fibResultDiv.appendChild(p);
+    });
+  }
+});
+
+// Make multiple asynchronous Fibonacci API calls
+async function makeFibonacciCalls(count, times) {
+  const promises = [];
+  for (let i = 0; i < times; i++) {
+    promises.push(fetch(`/fibonacci/${count}`).then(res => res.json()));
+  }
+
+  const results = await Promise.all(promises);
+  return results.map(result => result.result);
+}
