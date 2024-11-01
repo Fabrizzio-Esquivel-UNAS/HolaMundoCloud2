@@ -17,14 +17,19 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: |
           echo "Running as user $(whoami)"
           echo "INSTALLING NPM ......"
           npm install
-        cache:
-          paths:
-            - node_modules/
 
   build:
     runs-on: ubuntu-latest
@@ -38,6 +43,14 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Cache dist directory
+        uses: actions/cache@v3
+        with:
+          path: dist
+          key: ${{ runner.os }}-dist-${{ hashFiles('**/angular.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dist-
+
       - name: Build the app
         run: |
           ng version
@@ -45,9 +58,6 @@ jobs:
           chmod +x dist
           mv dist/HolaMundoCloud/* dist/
           rmdir dist/HolaMundoCloud
-        cache:
-          paths:
-            - dist/
 
       - name: Save build
         uses: actions/upload-artifact@v3
