@@ -46,13 +46,16 @@ jobs:
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
             #!/bin/bash
+            echo "Listing all Docker containers:"
+            docker ps -a  # List all containers, including stopped ones
+
             # Stop and remove the previous Docker container (ignore errors if not found)
             docker stop nodeapp || true
             docker rm nodeapp || true
             docker rmi nodeapp || true
 
             # Remove the old application directory
-            rm -rf /home/ec2-user/nodeapp
+            sudo rm -rf /home/ec2-user/nodeapp
           EOF
 
       - name: Copy application to EC2 instance
