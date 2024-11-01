@@ -1,0 +1,108 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          echo "Running as user $(whoami)"
+          echo "INSTALLING NPM ......"
+          npm install
+        cache:
+          paths:
+            - node_modules/
+
+  build:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build the app
+        run: |
+          ng version
+          ng build --build-optimizer
+          chmod +x dist
+          mv dist/HolaMundoCloud/* dist/
+          rmdir dist/HolaMundoCloud
+        cache:
+          paths:
+            - dist/
+
+      - name: Save build
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Set up SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
+          chmod 600 ec2_key.pem
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+
+      - name: Delete previous distribution on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
+            #!/bin/bash
+            # Stop and remove the previous Docker container and image
+            docker stop nodeapp || true
+            docker rm nodeapp || true
+            docker rmi nodeapp || true
+
+            # Remove the old application directory
+            rm -rf /home/ec2-user/app
+          EOF
+
+      - name: Copy `dist` to EC2 instance
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no -r dist ec2-user@"$EC2_HOST":/home/ec2-user/app
+
+      - name: Build and Run Docker Container on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
+            #!/bin/bash
+            # Navigate to app directory
+            cd /home/ec2-user/app
+
+            # Build and run the Docker container with the new distribution
+            docker build -t nodeapp .
+            docker run -d -p 80:3000 --name nodeapp nodeapp
+          EOF
+
+      - name: Clean up SSH key
+        run: rm ec2_key.pem
