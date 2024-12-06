@@ -71,17 +71,6 @@ resource "aws_launch_template" "ecs_launch_template" {
 
               # Install Git
               sudo yum install -y git
-
-              # Clone your Node.js app from the Git repository (replace with your repo)
-              cd /home/ec2-user
-              git clone https://github.com/Fabrizzio-Esquivel-UNAS/HolaMundoCloud2.git nodeapp
-              cd nodeapp
-
-              # Build the Docker image
-              sudo docker build -t nodeapp .
-
-              # Run the Docker container
-              sudo docker run -d -p 80:3000 nodeapp
               EOF
   )
 }

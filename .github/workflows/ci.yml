@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  EC2_HOST: 1.1.1.1
+
 jobs:
   install-dependencies:
     runs-on: ubuntu-latest
@@ -41,40 +44,33 @@ jobs:
           chmod 600 ec2_key.pem
 
       - name: Delete previous distribution on EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"${{ env.EC2_HOST }}" << 'EOF'
             #!/bin/bash
-            echo "Listing all Docker containers:"
-            docker ps -a  # List all containers, including stopped ones
+            # Stop all running Docker containers
+            echo "Stopping all Docker containers..."
+            sudo docker stop $(sudo docker ps -q) || echo "No running containers to stop."
 
-            # Replace "nodeapp" with the container ID or name if necessary
-            CONTAINER_ID=$(sudo docker ps -q --filter "ancestor=nodeapp")
-            if [ -n "$CONTAINER_ID" ]; then
-                echo "Stopping Docker container..."
-                sudo docker stop "$CONTAINER_ID"
-                echo "Removing Docker container..."
-                sudo docker rm "$CONTAINER_ID"
-            else
-                echo "No running container found for image 'nodeapp'."
-            fi
+            # Remove all Docker containers
+            echo "Removing all Docker containers..."
+            sudo docker rm $(sudo docker ps -aq) || echo "No containers to remove."
 
-            # Stop and remove the previous Docker container (ignore errors if not found)
-            echo "Removing Docker image 'nodeapp'..."
-            sudo docker rmi nodeapp || true
+            # Remove all Docker images
+            echo "Removing all Docker images..."
+            sudo docker rmi $(sudo docker images -q) || echo "No Docker images to remove."
 
-            # Remove the old application directory
+            # Clean up old application directory
+            echo "Removing the old application directory..."
             sudo rm -rf /home/ec2-user/nodeapp
+
+            # List contents of the application directory for verification
             echo "Listing /home/ec2-user/:"
             ls /home/ec2-user/
           EOF
 
       - name: Build and Run Docker Container on EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"${{ env.EC2_HOST }}" << 'EOF'
             #!/bin/bash
 
             # Clone your Node.js app from the Git repository (replace with your repo)
@@ -85,6 +81,14 @@ jobs:
             # Build and run the Docker container
             sudo docker build -t nodeapp .
             sudo docker run -d -p 80:3000 --name nodeapp nodeapp
+
+            # To collect server metrics, start a node_exporter container
+            docker run -d --name=node_exporter -p 9100:9100 prom/node-exporter
+
+            # Start the Prometheus container, mounting the prometheus.yml configuration
+            docker run -d --name=prometheus -p 9090:9090 \
+              -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml \
+              prom/prometheus
           EOF
 
       - name: Clean up SSH key
