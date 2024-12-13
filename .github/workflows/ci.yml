@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  EC2_HOST: 18.221.68.125
+  EC2_HOST: 3.141.13.177
 
 jobs:
   install-dependencies:
@@ -88,6 +88,7 @@ jobs:
             # Start the Prometheus container, mounting the prometheus.yml configuration
             docker run -d --name=prometheus -p 9090:9090 \
               -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml \
+              -e GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }} \
               prom/prometheus
           EOF
 
