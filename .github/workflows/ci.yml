@@ -85,13 +85,8 @@ jobs:
             # To collect server metrics, start a node_exporter container
             docker run -d --name=node_exporter -p 9100:9100 prom/node-exporter
 
-            # Preprocess the prometheus.template.yml file to generate prometheus.yml
-            sed "s|{{EC2_HOST}}|${{ env.EC2_HOST }}|g; s|{{GRAFANA_API_KEY}}|${{ secrets.GRAFANA_API_KEY }}|g" prometheus.template.yml > prometheus.yml
-
-            # Start the Prometheus container with the generated prometheus.yml
-            docker run -d --name=prometheus -p 9090:9090 \
-              -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml \
-              prom/prometheus
+            # Start docker compose
+            sudo docker-compose up --build -d
           EOF
 
       - name: Clean up SSH key
