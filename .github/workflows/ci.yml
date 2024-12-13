@@ -85,11 +85,12 @@ jobs:
             # To collect server metrics, start a node_exporter container
             docker run -d --name=node_exporter -p 9100:9100 prom/node-exporter
 
-            # Start the Prometheus container, mounting the prometheus.yml configuration
+            # Preprocess the prometheus.template.yml file to generate prometheus.yml
+            sed "s|{{EC2_HOST}}|${{ env.EC2_HOST }}|g; s|{{GRAFANA_API_KEY}}|${{ secrets.GRAFANA_API_KEY }}|g" prometheus.template.yml > prometheus.yml
+
+            # Start the Prometheus container with the updated prometheus.yml
             docker run -d --name=prometheus -p 9090:9090 \
               -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml \
-              -e GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }} \
-              -e EC2_HOST=${{ env.EC2_HOST }} \
               prom/prometheus
           EOF
 
