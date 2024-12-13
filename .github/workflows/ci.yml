@@ -89,6 +89,7 @@ jobs:
             docker run -d --name=prometheus -p 9090:9090 \
               -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml \
               -e GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }} \
+              -e EC2_HOST=${{ env.EC2_HOST }} \
               prom/prometheus
           EOF
 
